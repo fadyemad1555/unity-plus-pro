@@ -7,14 +7,13 @@ const distClient = join(process.cwd(), 'dist', 'client');
 const manifestPath = join(distClient, '.vite', 'manifest.json');
 
 if (!existsSync(distClient)) {
-  console.error('❌ dist/client not found. Build may have failed.');
+  console.error('❌ dist/client not found.');
   process.exit(1);
 }
 
 let cssFile = '';
 let entryJs = '';
 
-// Try reading the Vite manifest
 if (existsSync(manifestPath)) {
   const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
   for (const [key, value] of Object.entries(manifest)) {
@@ -23,7 +22,6 @@ if (existsSync(manifestPath)) {
       if (value.css && value.css.length > 0) cssFile = value.css[0];
     }
   }
-  // Fallback: find styles CSS in manifest
   if (!cssFile) {
     for (const [key, value] of Object.entries(manifest)) {
       if (value.file && value.file.includes('styles')) {
@@ -34,7 +32,7 @@ if (existsSync(manifestPath)) {
   }
 }
 
-// Fallback: scan dist/client/assets directory
+// Fallback: scan assets
 const assetsDir = join(distClient, 'assets');
 if (existsSync(assetsDir)) {
   const files = readdirSync(assetsDir);
@@ -43,8 +41,12 @@ if (existsSync(assetsDir)) {
     if (css) cssFile = 'assets/' + css;
   }
   if (!entryJs) {
-    const entry = files.find(f => f.startsWith('index') && f.endsWith('.js'));
-    if (entry) entryJs = 'assets/' + entry;
+    // Pick the LARGEST js file (the main bundle)
+    const jsFiles = files
+      .filter(f => f.endsWith('.js'))
+      .map(f => ({ name: f, size: readFileSync(join(assetsDir, f)).length }))
+      .sort((a, b) => b.size - a.size);
+    if (jsFiles.length > 0) entryJs = 'assets/' + jsFiles[0].name;
   }
 }
 
@@ -61,6 +63,11 @@ const html = `<!DOCTYPE html>
     ${cssFile ? `<link rel="stylesheet" crossorigin href="/${cssFile}" />` : ''}
   </head>
   <body>
+    <script>
+      // Provide minimal SSR options so TanStack Start doesn't wait for server-rendered state
+      window.__TSS_START_OPTIONS__ = { serializationAdapters: [], defaultSsr: false };
+      window.$_TSR = { h: function() {} };
+    </script>
     ${entryJs ? `<script type="module" crossorigin src="/${entryJs}"></script>` : ''}
   </body>
 </html>`;
