@@ -35,24 +35,16 @@ if (existsSync(manifestPath)) {
 }
 
 // Fallback: scan dist/client/assets directory
-if (!cssFile || !entryJs) {
-  const assetsDir = join(distClient, 'assets');
-  if (existsSync(assetsDir)) {
-    const files = readdirSync(assetsDir);
-    if (!cssFile) {
-      const css = files.find(f => f.startsWith('styles') && f.endsWith('.css'));
-      if (css) cssFile = 'assets/' + css;
-    }
-    if (!entryJs) {
-      // Find the largest JS file as likely entry
-      const jsFiles = files.filter(f => f.endsWith('.js')).map(f => {
-        const { statSync } = require('fs');
-        return { name: f };
-      });
-      // Look for index or client entry
-      const entry = files.find(f => f.startsWith('index') && f.endsWith('.js'));
-      if (entry) entryJs = 'assets/' + entry;
-    }
+const assetsDir = join(distClient, 'assets');
+if (existsSync(assetsDir)) {
+  const files = readdirSync(assetsDir);
+  if (!cssFile) {
+    const css = files.find(f => f.startsWith('styles') && f.endsWith('.css'));
+    if (css) cssFile = 'assets/' + css;
+  }
+  if (!entryJs) {
+    const entry = files.find(f => f.startsWith('index') && f.endsWith('.js'));
+    if (entry) entryJs = 'assets/' + entry;
   }
 }
 
@@ -62,7 +54,7 @@ const html = `<!DOCTYPE html>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
     <title>ShopERP — Modern E-commerce + ERP</title>
-    <meta name="description" content="Bilingual e-commerce storefront powered by an integrated ERP system. Shop millions of products with fast delivery." />
+    <meta name="description" content="Bilingual e-commerce storefront powered by an integrated ERP system." />
     <meta name="theme-color" content="#131921" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="icon" href="/favicon.ico" />
