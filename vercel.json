@@ -1,6 +1,6 @@
 {
-  "buildCommand": "npm run build && node generate-html.mjs",
-  "outputDirectory": "dist/client",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "framework": null,
   "rewrites": [
     {

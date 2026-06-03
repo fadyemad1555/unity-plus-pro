@@ -1,15 +1,32 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
-// or the app will break with duplicate plugins:
-//   - tanstackStart, viteReact, tailwindcss, tsConfigPaths, cloudflare (build-only),
-//     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
-//     error logger plugins, and sandbox detection (port/host/strictPort).
-// You can pass additional config via defineConfig({ vite: { ... } }) if needed.
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from 'vite';
+import viteReact from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+import tsConfigPaths from 'vite-tsconfig-paths';
 
-// Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-// @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
-export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
-  },
-});
+// Try TanStack Start plugin directly
+let tanstackPlugin: any;
+let nitroPlugin: any;
+
+try {
+  const { tanstackStart } = await import('@tanstack/react-start/plugin/vite');
+  tanstackPlugin = tanstackStart({ server: { entry: 'src/server' } });
+} catch (e) {
+  console.warn('tanstackStart plugin not found, skipping');
+}
+
+try {
+  const { nitro } = await import('nitro/vite');
+  nitroPlugin = nitro();
+} catch (e) {
+  console.warn('nitro plugin not found, skipping');
+}
+
+const plugins = [
+  tanstackPlugin,
+  nitroPlugin,
+  viteReact(),
+  tailwindcss(),
+  tsConfigPaths(),
+].filter(Boolean);
+
+export default defineConfig({ plugins });
